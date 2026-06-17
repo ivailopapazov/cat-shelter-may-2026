@@ -5,6 +5,7 @@ export function readBreeds() {
 }
 
 export function addBreed(breedName) {
+    // TODO: Generate unique id for each breed to avoid duplicates
     const newBreed = {
         id: breeds.length + 1,
         name: breedName
