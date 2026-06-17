@@ -1,24 +1,34 @@
 import http from 'http';
 import fs from 'fs/promises';
 import cats from './cats.js';
+import { addCat, readCats } from './catService.js';
 import { addBreed, readBreeds } from './breedService.js';
 
 const server = http.createServer(async (req, res) => {
-    console.log(readBreeds());
+    console.log(readCats());
     if (req.method === 'POST' && req.url === '/cats/add-breed') {
-        let body = '';
+        const bodyFormData = await readBodyFormData(req);
 
-        req.on('data', (chunk) => {
-            body += chunk;
-        });
+        const breedName = bodyFormData.get('breed');
 
-        req.on('end', async () => {
-            const formData = new URLSearchParams(body);
-            const breedName = formData.get('breed');
-            addBreed(breedName);
-        });
+        addBreed(breedName);
 
         // Redirect to the home page after adding the breed
+        return res.writeHead(302, { Location: '/' }).end();
+    }
+
+    if (req.method === 'POST' && req.url === '/cats/add-cat') {
+        const bodyFormData = await readBodyFormData(req);
+
+        const newCat = {
+            name: bodyFormData.get('name'),
+            description: bodyFormData.get('description'),
+            imageUrl: bodyFormData.get('imageUrl'),
+            breed: bodyFormData.get('breed')
+        };
+
+        addCat(newCat);
+
         return res.writeHead(302, { Location: '/' }).end();
     }
 
@@ -98,6 +108,22 @@ async function renderAddCatPage() {
     const result = htmlContent.replace('{{breadOptions}}', breedOptions);
 
     return result;
+}
+
+function readBodyFormData(req) {
+    return new Promise((resolve, reject) => {
+        let body = '';
+
+        req.on('data', (chunk) => {
+            body += chunk;
+        });
+
+        req.on('end', () => {
+            const formData = new URLSearchParams(body);
+
+            resolve(formData);
+        });
+    });
 }
 
 server.listen(5000, () => console.log('Server is listening on http://localhost:5000...'));
