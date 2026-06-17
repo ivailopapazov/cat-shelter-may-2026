@@ -83,6 +83,11 @@ const server = http.createServer(async (req, res) => {
 
     if (req.url === '/') {
         htmlContent = await renderHomePage();
+    } else if (req.url.startsWith('/search')) {
+        const urlParams = new URLSearchParams(req.url.split('?')[1]);
+        const name = urlParams.get('name');
+
+        htmlContent = await renderHomePage({ name });
     } else if (req.url === '/cats/add-breed') {
         htmlContent = await fs.readFile('./src/views/addBreed.html', 'utf-8');
     } else if (req.url === '/cats/add-cat') {
@@ -103,7 +108,7 @@ const server = http.createServer(async (req, res) => {
     res.end();
 });
 
-async function renderHomePage() {
+async function renderHomePage(filter = {}) {
     let htmlContent = await fs.readFile('./src/views/home/index.html', 'utf-8');
 
     const catTemplate = (cat) => `
@@ -118,7 +123,8 @@ async function renderHomePage() {
             </ul>
         </li>`;
 
-    const cats = readCats();
+    const cats = readCats(filter);
+
     const catsContent = `<ul>${cats.map(cat => catTemplate(cat)).join('\n')}</ul>`;
     const result = htmlContent.replace('{{cats}}', catsContent);
 
