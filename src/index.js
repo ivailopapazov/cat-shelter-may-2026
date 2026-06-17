@@ -1,5 +1,6 @@
 import http from 'http';
 import fs from 'fs/promises';
+import cats from './cats.js';
 
 const server = http.createServer(async (req, res) => {
     if (req.url === '/styles/site.css') {
@@ -17,7 +18,7 @@ const server = http.createServer(async (req, res) => {
         res.writeHead(200, { 'Content-Type': 'text/javascript' });
         res.write(jsContent);
         return res.end();
-    } 
+    }
 
     if (req.url === '/js/second-script.js') {
         const jsContent = await fs.readFile('./src/js/second-script.js', 'utf-8');
@@ -32,7 +33,7 @@ const server = http.createServer(async (req, res) => {
 
     switch (req.url) {
         case '/':
-            htmlContent = await fs.readFile('./src/views/home/index.html', 'utf-8');
+            htmlContent = await renderHomePage();
             break;
         case '/cats/add-breed':
             htmlContent = await fs.readFile('./src/views/addBreed.html', 'utf-8');
@@ -48,5 +49,26 @@ const server = http.createServer(async (req, res) => {
     res.write(htmlContent);
     res.end();
 });
+
+async function renderHomePage() {
+    let htmlContent = await fs.readFile('./src/views/home/index.html', 'utf-8');
+
+    const catTemplate = (cat) => `
+        <li>
+            <img src="${cat.imageUrl}" alt="${cat.name}">
+            <h3>${cat.name}</h3>
+            <p><span>Breed: </span>${cat.breed}</p>
+            <p><span>Description: </span>${cat.description}</p>
+            <ul class="buttons">
+                <li class="btn edit"><a href="">Change Info</a></li>
+                <li class="btn delete"><a href="">New Home</a></li>
+            </ul>
+        </li>`;
+
+    const catsContent = `<ul>${cats.map(cat => catTemplate(cat)).join('\n')}</ul>`;
+    const result = htmlContent.replace('{{cats}}', catsContent);
+
+    return result;
+}
 
 server.listen(5000, () => console.log('Server is listening on http://localhost:5000...'));
