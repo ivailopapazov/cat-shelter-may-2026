@@ -1,7 +1,7 @@
 import http from 'http';
 import fs from 'fs/promises';
 import { addCat, readCats, getCatById, editCat } from './catService.js';
-import { addBreed, readBreeds } from './breedService.js';
+import { addBreed, readBreeds, getBreedByName } from './breedService.js';
 
 const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && req.url === '/cats/add-breed') {
@@ -83,6 +83,10 @@ const server = http.createServer(async (req, res) => {
         const catId = req.url.split('/').pop();
 
         htmlContent = await renderEditCatPage(catId);
+    } else if (req.url.startsWith('/cats/new-home')) {
+        const catId = req.url.split('/').pop();
+
+        htmlContent = await renderNewHomePage(catId);
     } else {
         htmlContent = await renderNotFoundPage();
     }
@@ -102,7 +106,7 @@ async function renderHomePage() {
             <p><span>Description: </span>${cat.description}</p>
             <ul class="buttons">
                 <li class="btn edit"><a href="/cats/edit-cat/${cat.id}">Change Info</a></li>
-                <li class="btn delete"><a href="">New Home</a></li>
+                <li class="btn delete"><a href="/cats/new-home/${cat.id}">New Home</a></li>
             </ul>
         </li>`;
 
@@ -133,6 +137,25 @@ async function renderEditCatPage(catId) {
         .replace('{{description}}', cat.description)
         .replace('{{imageUrl}}', cat.imageUrl)
         .replace('{{breadOptions}}', renderBreedOptions(cat.breed));
+
+    return result;
+}
+
+async function renderNewHomePage(catId) {
+    const cat = getCatById(catId);
+    const breed = getBreedByName(cat.breed);
+
+    if (!cat) {
+        return renderNotFoundPage();
+    }
+
+    const htmlContent = await fs.readFile('./src/views/catShelter.html', 'utf-8');
+
+    const result = htmlContent.replaceAll('{{name}}', cat.name)
+        .replace('{{description}}', cat.description)
+        .replace('{{imageUrl}}', cat.imageUrl)
+        .replace('{{breedId}}', breed.id)
+        .replace('{{breedName}}', breed.name);
 
     return result;
 }
